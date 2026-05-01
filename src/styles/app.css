@@ -425,6 +425,67 @@ select {
   color: var(--text-muted);
   margin: 0;
 }
+.auth-page {
+  min-height: 100vh;
+  background: var(--bg-main);
+  color: var(--text-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 26px;
+  box-shadow: var(--shadow);
+}
+
+.auth-title {
+  margin: 0;
+  font-size: 36px;
+  color: var(--text-main);
+}
+
+.auth-subtitle {
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.auth-switch {
+  width: 100%;
+  margin-top: 16px;
+  background: transparent;
+  border: none;
+  color: var(--info);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.sidebar-user {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--text-muted);
+  word-break: break-word;
+}
+
+.logout-button {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  padding: 9px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+}
 @media (max-width: 900px) {
   .app-layout {
     flex-direction: column;

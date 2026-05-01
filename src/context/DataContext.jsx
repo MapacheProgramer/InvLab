@@ -19,7 +19,7 @@ export const DataContext = createContext(null)
 
 export const useData = () => useContext(DataContext)
 
-export function DataProvider({ children }) {
+export function DataProvider({ children, companyId }) {
   const [productos, setProductos] = useState([])
   const [ventas, setVentas] = useState([])
   const [compras, setCompras] = useState([])
@@ -32,6 +32,8 @@ export function DataProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   const cargarDatos = async () => {
+    if (!companyId) return
+
     try {
       setLoading(true)
 
@@ -42,11 +44,11 @@ export function DataProvider({ children }) {
         creditosData,
         cajaData,
       ] = await Promise.all([
-        getProductos(),
-        getVentas(),
-        getCompras(),
-        getCreditos(),
-        getCaja(),
+        getProductos(companyId),
+        getVentas(companyId),
+        getCompras(companyId),
+        getCreditos(companyId),
+        getCaja(companyId),
       ])
 
       setProductos(productosData)
@@ -56,7 +58,7 @@ export function DataProvider({ children }) {
       setCaja(cajaData)
     } catch (error) {
       console.error(error)
-      alert('Error cargando datos desde Supabase')
+      alert(error.message || 'Error cargando datos desde Supabase')
     } finally {
       setLoading(false)
     }
@@ -64,16 +66,15 @@ export function DataProvider({ children }) {
 
   useEffect(() => {
     cargarDatos()
-  }, [])
+  }, [companyId])
 
-  // Inventario
   const addProducto = async ({ nombre, precio, stock }) => {
     try {
-      await createProducto({ nombre, precio, stock })
+      await createProducto({ nombre, precio, stock }, companyId)
       await cargarDatos()
     } catch (error) {
       console.error(error)
-      alert('Error creando producto')
+      alert(error.message || 'Error creando producto')
     }
   }
 
@@ -83,15 +84,14 @@ export function DataProvider({ children }) {
 
   const removeProducto = async (id) => {
     try {
-      await deleteProducto(id)
+      await deleteProducto(id, companyId)
       await cargarDatos()
     } catch (error) {
       console.error(error)
-      alert('Error eliminando producto')
+      alert(error.message || 'Error eliminando producto')
     }
   }
 
-  // Ventas
   const addVenta = async ({ productoId, cantidad, efectivo, transferencia }) => {
     try {
       const producto = productos.find((p) => p.id === productoId)
@@ -101,12 +101,15 @@ export function DataProvider({ children }) {
         return
       }
 
-      await createVenta({
-        producto,
-        cantidad,
-        efectivo,
-        transferencia,
-      })
+      await createVenta(
+        {
+          producto,
+          cantidad,
+          efectivo,
+          transferencia,
+        },
+        companyId
+      )
 
       await cargarDatos()
     } catch (error) {
@@ -115,7 +118,6 @@ export function DataProvider({ children }) {
     }
   }
 
-  // Compras
   const addCompra = async ({ productoId, cantidad, costo }) => {
     try {
       const producto = productos.find((p) => p.id === productoId)
@@ -125,48 +127,49 @@ export function DataProvider({ children }) {
         return
       }
 
-      await createCompra({
-        producto,
-        cantidad,
-        costo,
-      })
+      await createCompra(
+        {
+          producto,
+          cantidad,
+          costo,
+        },
+        companyId
+      )
 
       await cargarDatos()
     } catch (error) {
       console.error(error)
-      alert('Error registrando compra')
+      alert(error.message || 'Error registrando compra')
     }
   }
 
-  // Créditos
   const addCredito = async ({ cliente, monto }) => {
     try {
-      await createCredito({ cliente, monto })
+      await createCredito({ cliente, monto }, companyId)
       await cargarDatos()
     } catch (error) {
       console.error(error)
-      alert('Error creando crédito')
+      alert(error.message || 'Error creando crédito')
     }
   }
 
   const abonarCredito = async (id, valor) => {
     try {
-      await pagarCredito(id, valor)
+      await pagarCredito(id, valor, companyId)
       await cargarDatos()
     } catch (error) {
       console.error(error)
-      alert('Error abonando crédito')
+      alert(error.message || 'Error abonando crédito')
     }
   }
 
-  // Caja
   const setSaldoInicial = async (monto) => {
     try {
-      await updateSaldoInicial(monto)
+      await updateSaldoInicial(monto, companyId)
       await cargarDatos()
     } catch (error) {
       console.error(error)
-      alert('Error actualizando saldo inicial')
+      alert(error.message || 'Error actualizando saldo inicial')
     }
   }
 

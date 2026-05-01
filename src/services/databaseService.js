@@ -4,23 +4,25 @@ import { supabase } from '../lib/supabaseClient'
 // PRODUCTOS
 // ==========================
 
-export async function getProductos() {
+export async function getProductos(companyId) {
   const { data, error } = await supabase
     .from('productos')
     .select('*')
+    .eq('company_id', companyId)
     .order('created_at', { ascending: false })
 
   if (error) throw error
   return data || []
 }
 
-export async function createProducto(producto) {
+export async function createProducto(producto, companyId) {
   const { data, error } = await supabase
     .from('productos')
     .insert({
       nombre: producto.nombre,
       precio: Number(producto.precio || 0),
       stock: Number(producto.stock || 0),
+      company_id: companyId,
     })
     .select()
     .single()
@@ -29,11 +31,12 @@ export async function createProducto(producto) {
   return data
 }
 
-export async function deleteProducto(id) {
+export async function deleteProducto(id, companyId) {
   const { error } = await supabase
     .from('productos')
     .delete()
     .eq('id', id)
+    .eq('company_id', companyId)
 
   if (error) throw error
 }
@@ -42,10 +45,11 @@ export async function deleteProducto(id) {
 // VENTAS
 // ==========================
 
-export async function getVentas() {
+export async function getVentas(companyId) {
   const { data, error } = await supabase
     .from('ventas')
     .select('*')
+    .eq('company_id', companyId)
     .order('fecha', { ascending: false })
 
   if (error) throw error
@@ -62,7 +66,10 @@ export async function getVentas() {
   }))
 }
 
-export async function createVenta({ producto, cantidad, efectivo, transferencia }) {
+export async function createVenta(
+  { producto, cantidad, efectivo, transferencia },
+  companyId
+) {
   const qty = Number(cantidad || 0)
   const ef = Number(efectivo || 0)
   const tr = Number(transferencia || 0)
@@ -81,6 +88,7 @@ export async function createVenta({ producto, cantidad, efectivo, transferencia 
       efectivo: ef,
       transferencia: tr,
       total,
+      company_id: companyId,
     })
     .select()
     .single()
@@ -93,6 +101,7 @@ export async function createVenta({ producto, cantidad, efectivo, transferencia 
     .from('productos')
     .update({ stock: nuevoStock })
     .eq('id', producto.id)
+    .eq('company_id', companyId)
 
   if (stockError) throw stockError
 
@@ -102,6 +111,7 @@ export async function createVenta({ producto, cantidad, efectivo, transferencia 
       tipo: 'ingreso',
       concepto: `Venta: ${producto.nombre}`,
       monto: total,
+      company_id: companyId,
     })
 
   if (cajaError) throw cajaError
@@ -113,10 +123,11 @@ export async function createVenta({ producto, cantidad, efectivo, transferencia 
 // COMPRAS
 // ==========================
 
-export async function getCompras() {
+export async function getCompras(companyId) {
   const { data, error } = await supabase
     .from('compras')
     .select('*')
+    .eq('company_id', companyId)
     .order('fecha', { ascending: false })
 
   if (error) throw error
@@ -132,7 +143,7 @@ export async function getCompras() {
   }))
 }
 
-export async function createCompra({ producto, cantidad, costo }) {
+export async function createCompra({ producto, cantidad, costo }, companyId) {
   const qty = Number(cantidad || 0)
   const cost = Number(costo || 0)
   const total = qty * cost
@@ -145,6 +156,7 @@ export async function createCompra({ producto, cantidad, costo }) {
       cantidad: qty,
       costo: cost,
       total,
+      company_id: companyId,
     })
     .select()
     .single()
@@ -157,6 +169,7 @@ export async function createCompra({ producto, cantidad, costo }) {
     .from('productos')
     .update({ stock: nuevoStock })
     .eq('id', producto.id)
+    .eq('company_id', companyId)
 
   if (stockError) throw stockError
 
@@ -166,6 +179,7 @@ export async function createCompra({ producto, cantidad, costo }) {
       tipo: 'egreso',
       concepto: `Compra: ${producto.nombre}`,
       monto: total,
+      company_id: companyId,
     })
 
   if (cajaError) throw cajaError
@@ -177,13 +191,14 @@ export async function createCompra({ producto, cantidad, costo }) {
 // CRÉDITOS
 // ==========================
 
-export async function getCreditos() {
+export async function getCreditos(companyId) {
   const { data, error } = await supabase
     .from('creditos')
     .select(`
       *,
       pagos_credito (*)
     `)
+    .eq('company_id', companyId)
     .order('fecha', { ascending: false })
 
   if (error) throw error
@@ -198,7 +213,7 @@ export async function getCreditos() {
   }))
 }
 
-export async function createCredito({ cliente, monto }) {
+export async function createCredito({ cliente, monto }, companyId) {
   const valor = Number(monto || 0)
 
   const { data, error } = await supabase
@@ -207,6 +222,7 @@ export async function createCredito({ cliente, monto }) {
       cliente,
       monto: valor,
       saldo: valor,
+      company_id: companyId,
     })
     .select()
     .single()
@@ -215,13 +231,14 @@ export async function createCredito({ cliente, monto }) {
   return data
 }
 
-export async function pagarCredito(id, valor) {
+export async function pagarCredito(id, valor, companyId) {
   const monto = Number(valor || 0)
 
   const { data: credito, error: creditoError } = await supabase
     .from('creditos')
     .select('*')
     .eq('id', id)
+    .eq('company_id', companyId)
     .single()
 
   if (creditoError) throw creditoError
@@ -232,6 +249,7 @@ export async function pagarCredito(id, valor) {
     .from('creditos')
     .update({ saldo: nuevoSaldo })
     .eq('id', id)
+    .eq('company_id', companyId)
 
   if (updateError) throw updateError
 
@@ -250,6 +268,7 @@ export async function pagarCredito(id, valor) {
       tipo: 'ingreso',
       concepto: 'Abono crédito',
       monto,
+      company_id: companyId,
     })
 
   if (cajaError) throw cajaError
@@ -259,18 +278,30 @@ export async function pagarCredito(id, valor) {
 // CAJA
 // ==========================
 
-export async function getCaja() {
+export async function getCaja(companyId) {
   const { data: config, error: configError } = await supabase
     .from('caja_config')
     .select('*')
-    .eq('id', 1)
-    .single()
+    .eq('company_id', companyId)
+    .maybeSingle()
 
   if (configError) throw configError
+
+  if (!config) {
+    const { error: insertError } = await supabase
+      .from('caja_config')
+      .insert({
+        saldo_inicial: 0,
+        company_id: companyId,
+      })
+
+    if (insertError) throw insertError
+  }
 
   const { data: movimientos, error: movimientosError } = await supabase
     .from('caja_movimientos')
     .select('*')
+    .eq('company_id', companyId)
     .order('fecha', { ascending: false })
 
   if (movimientosError) throw movimientosError
@@ -281,14 +312,35 @@ export async function getCaja() {
   }
 }
 
-export async function updateSaldoInicial(monto) {
+export async function updateSaldoInicial(monto, companyId) {
+  const { data: current, error: currentError } = await supabase
+    .from('caja_config')
+    .select('*')
+    .eq('company_id', companyId)
+    .maybeSingle()
+
+  if (currentError) throw currentError
+
+  if (!current) {
+    const { error: insertError } = await supabase
+      .from('caja_config')
+      .insert({
+        saldo_inicial: Number(monto || 0),
+        company_id: companyId,
+      })
+
+    if (insertError) throw insertError
+
+    return
+  }
+
   const { error } = await supabase
     .from('caja_config')
     .update({
       saldo_inicial: Number(monto || 0),
       updated_at: new Date().toISOString(),
     })
-    .eq('id', 1)
+    .eq('company_id', companyId)
 
   if (error) throw error
 }
