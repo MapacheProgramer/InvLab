@@ -76,7 +76,8 @@ select {
   font-size: 15px;
 }
 
-.sidebar-link:hover {
+.sidebar-link:hover,
+.sidebar-link-active {
   background: #1e293b;
   color: var(--text-main);
 }
@@ -85,6 +86,14 @@ select {
   flex: 1;
   padding: 20px;
   overflow-x: hidden;
+}
+
+.page-view {
+  display: none;
+}
+
+.page-view.active {
+  display: block;
 }
 
 .page {
@@ -315,6 +324,11 @@ select {
   color: var(--danger);
 }
 
+.badge-info {
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--info);
+}
+
 .empty {
   border: 1px dashed var(--border-soft);
   border-radius: 14px;
@@ -332,6 +346,16 @@ select {
   color: var(--text-muted);
   line-height: 1.5;
   font-size: 14px;
+}
+
+.total-warning {
+  border-color: rgba(250, 204, 21, 0.5);
+  color: var(--warning);
+}
+
+.total-danger {
+  border-color: rgba(239, 68, 68, 0.5);
+  color: var(--danger);
 }
 
 .abono-box {
@@ -395,9 +419,7 @@ select {
   color: var(--text-main);
   white-space: nowrap;
 }
-.mt-18 {
-  margin-top: 18px;
-}
+
 .loading-screen {
   min-height: 100vh;
   background: var(--bg-main);
@@ -425,6 +447,7 @@ select {
   color: var(--text-muted);
   margin: 0;
 }
+
 .auth-page {
   min-height: 100vh;
   background: var(--bg-main);
@@ -486,6 +509,100 @@ select {
   cursor: pointer;
   font-weight: 700;
 }
+
+.table-select {
+  max-width: 180px;
+  padding: 8px 10px;
+}
+
+.mt-18 {
+  margin-top: 18px;
+}
+
+.sync-indicator {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  background: var(--bg-card);
+  color: var(--info);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: var(--shadow);
+  z-index: 50;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 20px;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 430px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+.modal-title {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 22px;
+}
+
+.modal-message {
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin: 14px 0 22px;
+  white-space: pre-line;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.secondary-button {
+  background: transparent;
+  color: var(--text-soft);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.secondary-button:hover {
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.danger-button {
+  background: #dc2626;
+  color: #ffffff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.danger-button:hover {
+  filter: brightness(1.1);
+}
+
 @media (max-width: 900px) {
   .app-layout {
     flex-direction: column;
@@ -512,5 +629,95 @@ select {
   .search-input {
     min-width: 100%;
   }
-  
+  .text-success {
+  color: var(--success);
+  }
+
+  .text-danger {
+    color: var(--danger);
+}
+  .action-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.toast-container {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 1200;
+  width: min(360px, calc(100vw - 32px));
+}
+
+.toast {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--info);
+  border-radius: 14px;
+  padding: 14px 14px;
+  box-shadow: var(--shadow);
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  animation: toastIn 0.22s ease-out;
+}
+
+.toast-success {
+  border-left-color: var(--success);
+}
+
+.toast-error {
+  border-left-color: var(--danger);
+}
+
+.toast-warning {
+  border-left-color: var(--warning);
+}
+
+.toast-info {
+  border-left-color: var(--info);
+}
+
+.toast-title {
+  display: block;
+  color: var(--text-main);
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.toast-message {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.toast-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.toast-close:hover {
+  color: var(--text-main);
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
 }

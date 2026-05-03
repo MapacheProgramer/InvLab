@@ -4,8 +4,11 @@ import {
   getProductos,
   createProducto,
   deleteProducto,
+  updateProducto as updateProductoService,
+  ajustarStockProducto,
   getVentas,
   createVenta,
+  deleteVenta,
   getCompras,
   createCompra,
   getCreditos,
@@ -13,6 +16,7 @@ import {
   pagarCredito,
   getCaja,
   updateSaldoInicial,
+  getMovimientosInventario,
 } from '../services/databaseService'
 
 export const DataContext = createContext(null)
@@ -24,18 +28,25 @@ export function DataProvider({ children, companyId }) {
   const [ventas, setVentas] = useState([])
   const [compras, setCompras] = useState([])
   const [creditos, setCreditos] = useState([])
+  const [movimientosInventario, setMovimientosInventario] = useState([])
+
   const [caja, setCaja] = useState({
     saldoInicial: 0,
     movimientos: [],
   })
 
-  const [loading, setLoading] = useState(true)
+  const [initialLoading, setInitialLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
 
-  const cargarDatos = async () => {
+  const cargarDatos = async ({ initial = false } = {}) => {
     if (!companyId) return
 
     try {
-      setLoading(true)
+      if (initial) {
+        setInitialLoading(true)
+      } else {
+        setRefreshing(true)
+      }
 
       const [
         productosData,
@@ -43,12 +54,14 @@ export function DataProvider({ children, companyId }) {
         comprasData,
         creditosData,
         cajaData,
+        movimientosInventarioData,
       ] = await Promise.all([
         getProductos(companyId),
         getVentas(companyId),
         getCompras(companyId),
         getCreditos(companyId),
         getCaja(companyId),
+        getMovimientosInventario(companyId),
       ])
 
       setProductos(productosData)
@@ -56,44 +69,147 @@ export function DataProvider({ children, companyId }) {
       setCompras(comprasData)
       setCreditos(creditosData)
       setCaja(cajaData)
+      setMovimientosInventario(movimientosInventarioData)
     } catch (error) {
       console.error(error)
       alert(error.message || 'Error cargando datos desde Supabase')
     } finally {
-      setLoading(false)
+      setInitialLoading(false)
+      setRefreshing(false)
     }
+  }
+
+  const cargarProductos = async () => {
+    const data = await getProductos(companyId)
+    setProductos(data)
+  }
+
+  const cargarVentas = async () => {
+    const data = await getVentas(companyId)
+    setVentas(data)
+  }
+
+  const cargarCompras = async () => {
+    const data = await getCompras(companyId)
+    setCompras(data)
+  }
+
+  const cargarCreditos = async () => {
+    const data = await getCreditos(companyId)
+    setCreditos(data)
+  }
+
+  const cargarCaja = async () => {
+    const data = await getCaja(companyId)
+    setCaja(data)
+  }
+
+  const cargarMovimientosInventario = async () => {
+    const data = await getMovimientosInventario(companyId)
+    setMovimientosInventario(data)
   }
 
   useEffect(() => {
-    cargarDatos()
+    cargarDatos({ initial: true })
   }, [companyId])
 
-  const addProducto = async ({ nombre, precio, stock }) => {
+  const addProducto = async ({
+    nombre,
+    precio,
+    precio_venta,
+    costo_promedio,
+    stock,
+    stock_minimo,
+    categoria,
+  }) => {
     try {
-      await createProducto({ nombre, precio, stock }, companyId)
-      await cargarDatos()
+      setRefreshing(true)
+
+      await createProducto(
+        {
+          nombre,
+          precio,
+          precio_venta,
+          costo_promedio,
+          stock,
+          stock_minimo,
+          categoria,
+        },
+        companyId
+      )
+
+      await Promise.all([
+        cargarProductos(),
+        cargarMovimientosInventario(),
+      ])
     } catch (error) {
       console.error(error)
       alert(error.message || 'Error creando producto')
+    } finally {
+      setRefreshing(false)
     }
   }
 
-  const updateProducto = async () => {
-    alert('Edición de producto pendiente por implementar')
+  const updateProducto = async (id, producto) => {
+    try {
+      setRefreshing(true)
+
+      await updateProductoService(id, producto, companyId)
+      await cargarProductos()
+    } catch (error) {
+      console.error(error)
+      alert(error.message || 'Error actualizando producto')
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  const ajustarStock = async (id, ajuste) => {
+    try {
+      setRefreshing(true)
+
+      await ajustarStockProducto(id, ajuste, companyId)
+
+      await Promise.all([
+        cargarProductos(),
+        cargarMovimientosInventario(),
+      ])
+    } catch (error) {
+      console.error(error)
+      alert(error.message || 'Error ajustando stock')
+    } finally {
+      setRefreshing(false)
+    }
   }
 
   const removeProducto = async (id) => {
     try {
+      setRefreshing(true)
+
       await deleteProducto(id, companyId)
-      await cargarDatos()
+
+      await Promise.all([
+        cargarProductos(),
+        cargarMovimientosInventario(),
+      ])
     } catch (error) {
       console.error(error)
       alert(error.message || 'Error eliminando producto')
+    } finally {
+      setRefreshing(false)
     }
   }
 
-  const addVenta = async ({ productoId, cantidad, efectivo, transferencia }) => {
+  const addVenta = async ({
+    productoId,
+    cantidad,
+    efectivo,
+    transferencia,
+    total,
+  }) => {
     try {
+      setRefreshing(true)
+
       const producto = productos.find((p) => p.id === productoId)
 
       if (!producto) {
@@ -107,19 +223,49 @@ export function DataProvider({ children, companyId }) {
           cantidad,
           efectivo,
           transferencia,
+          total,
         },
         companyId
       )
 
-      await cargarDatos()
+      await Promise.all([
+        cargarProductos(),
+        cargarVentas(),
+        cargarCaja(),
+        cargarMovimientosInventario(),
+      ])
     } catch (error) {
       console.error(error)
       alert(error.message || 'Error registrando venta')
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  const removeVenta = async (id) => {
+    try {
+      setRefreshing(true)
+
+      await deleteVenta(id, companyId)
+
+      await Promise.all([
+        cargarProductos(),
+        cargarVentas(),
+        cargarCaja(),
+        cargarMovimientosInventario(),
+      ])
+    } catch (error) {
+      console.error(error)
+      alert(error.message || 'Error eliminando venta')
+    } finally {
+      setRefreshing(false)
     }
   }
 
   const addCompra = async ({ productoId, cantidad, costo }) => {
     try {
+      setRefreshing(true)
+
       const producto = productos.find((p) => p.id === productoId)
 
       if (!producto) {
@@ -136,40 +282,64 @@ export function DataProvider({ children, companyId }) {
         companyId
       )
 
-      await cargarDatos()
+      await Promise.all([
+        cargarProductos(),
+        cargarCompras(),
+        cargarCaja(),
+        cargarMovimientosInventario(),
+      ])
     } catch (error) {
       console.error(error)
       alert(error.message || 'Error registrando compra')
+    } finally {
+      setRefreshing(false)
     }
   }
 
   const addCredito = async ({ cliente, monto }) => {
     try {
+      setRefreshing(true)
+
       await createCredito({ cliente, monto }, companyId)
-      await cargarDatos()
+
+      await cargarCreditos()
     } catch (error) {
       console.error(error)
       alert(error.message || 'Error creando crédito')
+    } finally {
+      setRefreshing(false)
     }
   }
 
   const abonarCredito = async (id, valor) => {
     try {
+      setRefreshing(true)
+
       await pagarCredito(id, valor, companyId)
-      await cargarDatos()
+
+      await Promise.all([
+        cargarCreditos(),
+        cargarCaja(),
+      ])
     } catch (error) {
       console.error(error)
       alert(error.message || 'Error abonando crédito')
+    } finally {
+      setRefreshing(false)
     }
   }
 
   const setSaldoInicial = async (monto) => {
     try {
+      setRefreshing(true)
+
       await updateSaldoInicial(monto, companyId)
-      await cargarDatos()
+      await cargarCaja()
     } catch (error) {
       console.error(error)
       alert(error.message || 'Error actualizando saldo inicial')
+    } finally {
+      setRefreshing(false)
     }
   }
 
@@ -185,8 +355,13 @@ export function DataProvider({ children, companyId }) {
     const saldo =
       Number(caja.saldoInicial) + Number(ingresos) - Number(egresos)
 
-    return { ingresos, egresos, saldo }
-  }, [caja])
+    const utilidad = ventas.reduce(
+      (acc, v) => acc + Number(v.utilidad_total || 0),
+      0
+    )
+
+    return { ingresos, egresos, saldo, utilidad }
+  }, [caja, ventas])
 
   const value = {
     productos,
@@ -194,33 +369,27 @@ export function DataProvider({ children, companyId }) {
     compras,
     creditos,
     caja,
+    movimientosInventario,
     resumen,
-    loading,
+
+    loading: initialLoading,
+    refreshing,
 
     cargarDatos,
 
     addProducto,
     updateProducto,
+    ajustarStock,
     removeProducto,
 
     addCompra,
     addVenta,
+    removeVenta,
 
     addCredito,
     abonarCredito,
 
     setSaldoInicial,
-  }
-
-  if (loading) {
-    return (
-      <div className="loading-screen">
-        <div className="loading-card">
-          <h2>InvLab</h2>
-          <p>Cargando datos...</p>
-        </div>
-      </div>
-    )
   }
 
   return (

@@ -14,6 +14,11 @@ function Creditos() {
   const [monto, setMonto] = useState('')
   const [busqueda, setBusqueda] = useState('')
 
+  const handleOnlyNumbers = (value, setter) => {
+    const cleanValue = value.replace(/\D/g, '')
+    setter(cleanValue)
+  }
+
   const formatMoney = (value) => {
     return Number(value || 0).toLocaleString('es-CO', {
       style: 'currency',
@@ -94,10 +99,11 @@ function Creditos() {
 
             <FormField
               label="Monto inicial"
-              type="number"
+              type="text"
+              inputMode="numeric"
               placeholder="Ej: 50000"
               value={monto}
-              onChange={(e) => setMonto(e.target.value)}
+              onChange={(e) => handleOnlyNumbers(e.target.value, setMonto)}
             />
 
             <button className="primary-button" type="submit">
@@ -174,6 +180,11 @@ function Abono({ id, saldo }) {
   const { abonarCredito } = useData()
   const [valor, setValor] = useState('')
 
+  const handleOnlyNumbers = (value, setter) => {
+    const cleanValue = value.replace(/\D/g, '')
+    setter(cleanValue)
+  }
+
   const handleAbono = () => {
     if (!valor || Number(valor) <= 0) {
       alert('Ingresa un abono válido')
@@ -193,10 +204,11 @@ function Abono({ id, saldo }) {
     <div className="abono-box">
       <input
         className="abono-input"
-        type="number"
+        type="text"
+        inputMode="numeric"
         placeholder="Valor"
         value={valor}
-        onChange={(e) => setValor(e.target.value)}
+        onChange={(e) => handleOnlyNumbers(e.target.value, setValor)}
       />
 
       <button className="small-button" onClick={handleAbono}>

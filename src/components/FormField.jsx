@@ -6,6 +6,7 @@ function FormField({
   onChange,
   as = 'input',
   children,
+  inputMode,
 }) {
   return (
     <div className="field">
@@ -19,6 +20,7 @@ function FormField({
         <input
           className="input"
           type={type}
+          inputMode={inputMode}
           placeholder={placeholder}
           value={value}
           onChange={onChange}

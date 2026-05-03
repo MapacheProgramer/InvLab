@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import { DataProvider } from './context/DataContext'
+import { DataProvider, useData } from './context/DataContext'
+import { ToastProvider } from './context/ToastContext'
 
 import Dashboard from './pages/Dashboard'
 import Inventario from './pages/Inventario'
@@ -8,10 +9,24 @@ import Ventas from './pages/Ventas'
 import Compras from './pages/Compras'
 import Creditos from './pages/Creditos'
 import Caja from './pages/Caja'
+import Equipo from './pages/Equipo'
+import Movimientos from './pages/Movimientos'
 import Login from './pages/Login'
 
-function Layout({ children, setPage }) {
+function Layout({ page, setPage }) {
   const { user, company, role, logout } = useAuth()
+  const { refreshing, loading } = useData()
+
+  const navItems = [
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'inventario', label: 'Inventario' },
+    { id: 'ventas', label: 'Ventas' },
+    { id: 'compras', label: 'Compras' },
+    { id: 'creditos', label: 'Créditos' },
+    { id: 'caja', label: 'Caja' },
+    { id: 'movimientos', label: 'Movimientos' },
+    { id: 'equipo', label: 'Equipo' },
+  ]
 
   return (
     <div className="app-layout">
@@ -19,27 +34,81 @@ function Layout({ children, setPage }) {
         <h2 className="sidebar-title">InvLab</h2>
 
         <nav className="sidebar-nav">
-          <button className="sidebar-link" onClick={() => setPage('dashboard')}>Dashboard</button>
-          <button className="sidebar-link" onClick={() => setPage('inventario')}>Inventario</button>
-          <button className="sidebar-link" onClick={() => setPage('ventas')}>Ventas</button>
-          <button className="sidebar-link" onClick={() => setPage('compras')}>Compras</button>
-          <button className="sidebar-link" onClick={() => setPage('creditos')}>Créditos</button>
-          <button className="sidebar-link" onClick={() => setPage('caja')}>Caja</button>
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={
+                page === item.id
+                  ? 'sidebar-link sidebar-link-active'
+                  : 'sidebar-link'
+              }
+              onClick={() => setPage(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
         </nav>
 
         <div className="sidebar-user">
-          <small>{company?.name}</small>
+          <small>{company?.name || 'Sin empresa'}</small>
           <small>{user?.email}</small>
-          <small>Rol: {role}</small>
+          <small>Rol: {role || 'sin rol'}</small>
 
-          <button className="logout-button" onClick={logout}>
+          <button type="button" className="logout-button" onClick={logout}>
             Cerrar sesión
           </button>
         </div>
       </aside>
 
-      <main className="main-content">{children}</main>
+      <main className="main-content">
+        {(refreshing || loading) && (
+          <div className="sync-indicator">
+            {loading ? 'Cargando datos...' : 'Actualizando...'}
+          </div>
+        )}
+
+        <PersistentPages activePage={page} />
+      </main>
     </div>
+  )
+}
+
+function PersistentPages({ activePage }) {
+  return (
+    <>
+      <div className={activePage === 'dashboard' ? 'page-view active' : 'page-view'}>
+        <Dashboard />
+      </div>
+
+      <div className={activePage === 'inventario' ? 'page-view active' : 'page-view'}>
+        <Inventario />
+      </div>
+
+      <div className={activePage === 'ventas' ? 'page-view active' : 'page-view'}>
+        <Ventas />
+      </div>
+
+      <div className={activePage === 'compras' ? 'page-view active' : 'page-view'}>
+        <Compras />
+      </div>
+
+      <div className={activePage === 'creditos' ? 'page-view active' : 'page-view'}>
+        <Creditos />
+      </div>
+
+      <div className={activePage === 'caja' ? 'page-view active' : 'page-view'}>
+        <Caja />
+      </div>
+
+      <div className={activePage === 'movimientos' ? 'page-view active' : 'page-view'}>
+        <Movimientos />
+      </div>
+
+      <div className={activePage === 'equipo' ? 'page-view active' : 'page-view'}>
+        <Equipo />
+      </div>
+    </>
   )
 }
 
@@ -78,6 +147,7 @@ function AppContent() {
           <p>{companyError}</p>
 
           <button
+            type="button"
             className="primary-button"
             onClick={() => loadCompany(user)}
           >
@@ -96,6 +166,7 @@ function AppContent() {
           <p>No se encontró una empresa asociada.</p>
 
           <button
+            type="button"
             className="primary-button"
             onClick={() => loadCompany(user)}
           >
@@ -106,28 +177,20 @@ function AppContent() {
     )
   }
 
-  const renderPage = () => {
-    if (page === 'inventario') return <Inventario />
-    if (page === 'ventas') return <Ventas />
-    if (page === 'compras') return <Compras />
-    if (page === 'creditos') return <Creditos />
-    if (page === 'caja') return <Caja />
-
-    return <Dashboard />
-  }
-
   return (
     <DataProvider companyId={companyId}>
-      <Layout setPage={setPage}>{renderPage()}</Layout>
+      <Layout page={page} setPage={setPage} />
     </DataProvider>
   )
 }
 
 function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ToastProvider>
   )
 }
 
